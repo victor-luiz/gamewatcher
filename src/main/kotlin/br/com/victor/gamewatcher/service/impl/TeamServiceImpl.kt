@@ -8,6 +8,7 @@ import br.com.victor.gamewatcher.repository.TeamRepository
 import br.com.victor.gamewatcher.service.TeamService
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.server.ResponseStatusException
 
 @Service
@@ -22,10 +23,12 @@ class TeamServiceImpl(
         return repository.save(entity).toResponse()
     }
 
+    @Transactional(readOnly = true)
     override fun getAll(): List<TeamResponseDto> {
         return repository.findAll().map { it.toResponse() }
     }
 
+    @Transactional(readOnly = true)
     override fun getById(id: Long): TeamResponseDto {
         val team = repository.findById(id)
             .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Tme não existe") }
@@ -39,8 +42,11 @@ class TeamServiceImpl(
         val existingTeam = repository.findById(id)
             .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Time para edição não encontrado") }
 
-        existingTeam.name = dto.name
-        existingTeam.acronym = dto.acronym
+
+        existingTeam.apply {
+            this.name = dto.name
+            this.acronym = dto.acronym
+        }
 
         return repository.save(existingTeam).toResponse()
     }
@@ -49,5 +55,11 @@ class TeamServiceImpl(
         if (!repository.existsById(id)) {
             throw ResponseStatusException(HttpStatus.NOT_FOUND, "Time para exlcusão não encontrado")
         }
-        repository.deleteById(id)    }
+        repository.deleteById(id)
+    }
+
+    override fun getEntityById(id: Long): Team {
+        return repository.findById(id)
+            .orElseThrow { ResponseStatusException(HttpStatus.NOT_FOUND, "Time não encontrado") }
+    }
 }
